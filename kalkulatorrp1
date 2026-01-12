@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator SDA RoK - TP STORE (IDR)</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #eef4fb;
+  padding: 20px;
+}
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+h2 {
+  text-align: center;
+  color: #007bff;
+}
+label {
+  font-weight: bold;
+  margin-top: 15px;
+  display: block;
+}
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.hasil {
+  margin-top: 20px;
+  background: #f4faff;
+  padding: 15px;
+  border-radius: 8px;
+  line-height: 1.6;
+  white-space: pre-line;
+  font-size: 14px;
+}
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #007bff;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+button:active {
+  background: #0056b3;
+}
+.note {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>Kalkulator TP STORE (IDR)</h2>
+
+<label>Harga per 1M Food (Rp):</label>
+<input type="number" id="foodPrice" placeholder="Contoh: 1300">
+<label>Jumlah Food (M):</label>
+<input type="number" id="foodQty" placeholder="Contoh: 200">
+
+<label>Harga per 1M Wood (Rp):</label>
+<input type="number" id="woodPrice" placeholder="Contoh: 1300">
+<label>Jumlah Wood (M):</label>
+<input type="number" id="woodQty" placeholder="Contoh: 200">
+
+<label>Harga per 1M Stone (Rp):</label>
+<input type="number" id="stonePrice" placeholder="Contoh: 1500">
+<label>Jumlah Stone (M):</label>
+<input type="number" id="stoneQty" placeholder="Contoh: 200">
+
+<label>Harga per 1M Gold (Rp):</label>
+<input type="number" id="goldPrice" placeholder="Contoh: 1800">
+<label>Jumlah Gold (M):</label>
+<input type="number" id="goldQty" placeholder="Contoh: 200">
+
+<div class="hasil" id="hasil">
+Masukkan harga & jumlah SDA untuk melihat hasil.
+</div>
+
+<button onclick="salinHasil()">Salin Seluruh Hasil</button>
+
+<div class="note">TP STORE • Farm Manual • Aman & Terpercaya</div>
+</div>
+
+<script>
+const inputs = document.querySelectorAll("input");
+const hasil = document.getElementById("hasil");
+
+function rp(n) {
+  return "Rp" + n.toLocaleString("id-ID");
+}
+
+function hitung() {
+  const data = [
+    {name:"Food", p:foodPrice.value, q:foodQty.value},
+    {name:"Wood", p:woodPrice.value, q:woodQty.value},
+    {name:"Stone", p:stonePrice.value, q:stoneQty.value},
+    {name:"Gold", p:goldPrice.value, q:goldQty.value},
+  ];
+
+  let total = 0;
+  let text = "TP STORE\nRINCIAN PESANAN SDA RoK\n\n";
+
+  data.forEach(d => {
+    const price = parseFloat(d.p);
+    const qty = parseFloat(d.q);
+    if (!isNaN(price) && !isNaN(qty) && price > 0 && qty > 0) {
+      const sub = price * qty;
+      total += sub;
+      text += `${d.name}\n`;
+      text += `• Jumlah : ${qty} M\n`;
+      text += `• Harga  : ${rp(price)} / 1M\n`;
+      text += `• Subtotal: ${rp(sub)}\n\n`;
+    }
+  });
+
+  if (total === 0) {
+    hasil.textContent = "Masukkan harga dan jumlah SDA.";
+    return;
+  }
+
+  text += `TOTAL BAYAR\n${rp(total)}\n\n`;
+  text += `TP STORE • Farm Manual • Aman & Terpercaya`;
+
+  hasil.textContent = text;
+}
+
+function salinHasil() {
+  navigator.clipboard.writeText(hasil.textContent)
+    .then(() => alert("Hasil berhasil disalin!"))
+    .catch(() => alert("Gagal menyalin"));
+}
+
+inputs.forEach(i => i.addEventListener("input", hitung));
+</script>
+
+</body>
+</html>
