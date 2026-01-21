@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Pembagian RSS Sama Rata</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;background:#020617;color:#e5e7eb;padding:14px}
+h2{text-align:center}
+.card{border:1px solid #1e293b;border-radius:8px;padding:12px;margin-bottom:14px}
+input{width:100%;padding:6px;margin:3px 0;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:6px}
+button{padding:10px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;margin-top:6px}
+button.secondary{background:#475569}
+button.danger{background:#dc2626}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{border:1px solid #334155;padding:6px;text-align:center}
+.result{white-space:pre-line;background:#020617;border:1px solid #334155;padding:10px;border-radius:6px;margin-top:10px}
+.check{transform:scale(1.2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+</style>
+</head>
+
+<body>
+
+<h2>Pembagian 4013</h2>
+
+<div class="card">
+<h3>Kebutuhan Buyer (M)</h3>
+<input id="bJ" type="number" placeholder="Jagung">
+<input id="bK" type="number" placeholder="Kayu">
+<input id="bB" type="number" placeholder="Batu">
+<input id="bE" type="number" placeholder="Emas">
+</div>
+
+<div class="card">
+<h3>Rate (Rp / 1M)</h3>
+<input id="rJ" type="number" placeholder="Jagung">
+<input id="rK" type="number" placeholder="Kayu">
+<input id="rB" type="number" placeholder="Batu">
+<input id="rE" type="number" placeholder="Emas">
+</div>
+
+<div class="card grid2">
+<button onclick="ambilSheet()">Ambil dari Google Sheet</button>
+<button class="secondary" onclick="tambahManual()">Tambah Anggota Manual</button>
+</div>
+
+<div class="card">
+<h3>Data Anggota</h3>
+
+<div class="grid2">
+<button onclick="centangSemua()">Centang Semua</button>
+<button class="secondary" onclick="lepasSemua()">Lepas Semua</button>
+</div>
+
+<div id="tabel"></div>
+</div>
+
+<div class="card">
+<button onclick="hitung()">Hitung Pembagian</button>
+<button onclick="salinKirim()">Salin Pembagian Kirim</button>
+<button onclick="salinAll()">Salin Seluruh Hasil</button>
+<div id="hasil" class="result"></div>
+</div>
+
+<script>
+const sheetURL="https://docs.google.com/spreadsheets/d/e/2PACX-1vRA4SU5CuUWCKiiDp2ErWMmTfycxGJ3RlIf_BRrxO1Z3m_MEGcqFoxxWP30OYDBGCl6kFr2SKuyUXDE/pub?output=csv";
+
+let teksKirim="", teksAll="";
+
+function buatTabelHeader(){
+ if(tabel.innerHTML.trim()!=="") return;
+ tabel.innerHTML='<table id="tbl"><tr><th>Ikut</th><th>Nama</th><th>Jagung</th><th>Kayu</th><th>Batu</th><th>Emas</th><th>Aksi</th></tr></table>';
+}
+
+function ambilSheet(){
+ fetch(sheetURL)
+ .then(r=>r.text())
+ .then(t=>{
+  buatTabelHeader();
+  let tbl=document.getElementById("tbl");
+  let rows=t.trim().split("\n").slice(1);
+  rows.forEach(r=>{
+   let c=r.split(",");
+   tbl.innerHTML+=rowHTML(c[0],c[1],c[2],c[3],c[4]);
+  });
+ });
+}
+
+function tambahManual(){
+ buatTabelHeader();
+ document.getElementById("tbl").innerHTML+=rowHTML("","0","0","0","0");
+}
+
+function rowHTML(n,j,k,b,e){
+ return `<tr>
+  <td><input type="checkbox" class="ikut check" checked></td>
+  <td><input class="n" value="${n}"></td>
+  <td><input class="j" type="number" value="${j}"></td>
+  <td><input class="k" type="number" value="${k}"></td>
+  <td><input class="b" type="number" value="${b}"></td>
+  <td><input class="e" type="number" value="${e}"></td>
+  <td><button class="danger" onclick="this.closest('tr').remove()">Hapus</button></td>
+ </tr>`;
+}
+
+function centangSemua(){document.querySelectorAll(".ikut").forEach(c=>c.checked=true)}
+function lepasSemua(){document.querySelectorAll(".ikut").forEach(c=>c.checked=false)}
+
+function hitung(){
+ let need={j:+bJ.value||0,k:+bK.value||0,b:+bB.value||0,e:+bE.value||0};
+ let rate={j:+rJ.value||0,k:+rK.value||0,b:+rB.value||0,e:+rE.value||0};
+
+ let rows=[...document.querySelectorAll("#tbl tr")].slice(1);
+ let aktif=[];
+ rows.forEach(r=>{
+  if(r.querySelector(".ikut").checked){
+   aktif.push({
+    nama:r.querySelector(".n").value,
+    stok:{
+     j:+r.querySelector(".j").value,
+     k:+r.querySelector(".k").value,
+     b:+r.querySelector(".b").value,
+     e:+r.querySelector(".e").value
+    },
+    kirim:{j:0,k:0,b:0,e:0}
+   });
+  }
+ });
+
+ if(aktif.length===0){alert("Tidak ada anggota yang ikut");return;}
+
+ ["j","k","b","e"].forEach(x=>{
+  let sisa=need[x];
+  while(sisa>0){
+   let jalan=false;
+   for(let a of aktif){
+    if(a.stok[x]-a.kirim[x]>0 && sisa>0){
+     a.kirim[x]++; sisa--; jalan=true;
+    }
+   }
+   if(!jalan) break;
+  }
+ });
+
+ teksKirim="PEMBAGIAN KIRIM RSS\n\n";
+ teksAll=
+`RATE (Rp / 1M)
+🌽 Jagung : Rp ${rate.j.toLocaleString("id-ID")}
+🪵 Kayu   : Rp ${rate.k.toLocaleString("id-ID")}
+🪨 Batu   : Rp ${rate.b.toLocaleString("id-ID")}
+🪙 Emas   : Rp ${rate.e.toLocaleString("id-ID")}
+
+HASIL PEMBAGIAN\n\n`;
+
+ let total=0;
+ aktif.forEach(a=>{
+  let bayar=a.kirim.j*rate.j+a.kirim.k*rate.k+a.kirim.b*rate.b+a.kirim.e*rate.e;
+  total+=bayar;
+
+  teksKirim+=`${a.nama} kirim ${a.kirim.j}/${a.kirim.k}/${a.kirim.b}/${a.kirim.e}\n`;
+  teksAll+=`${a.nama}
+Kirim : ${a.kirim.j}/${a.kirim.k}/${a.kirim.b}/${a.kirim.e}
+Penghasilan : Rp ${bayar.toLocaleString("id-ID")}
+
+`;
+ });
+
+ teksAll+=`TOTAL PENGHASILAN: Rp ${total.toLocaleString("id-ID")}`;
+ hasil.innerText=teksAll;
+}
+
+function salinKirim(){navigator.clipboard.writeText(teksKirim);alert("Pembagian kirim disalin")}
+function salinAll(){navigator.clipboard.writeText(teksAll);alert("Seluruh hasil disalin")}
+</script>
+
+</body>
+</html>
