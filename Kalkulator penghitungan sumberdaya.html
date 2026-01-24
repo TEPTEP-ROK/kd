@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator SDA RoK</title>
+
+<style>
+body{
+  font-family:Arial,sans-serif;
+  background:#020617;
+  color:#e5e7eb;
+  padding:14px
+}
+.container{
+  max-width:600px;
+  margin:auto;
+  border:1px solid #1f2937;
+  border-radius:14px;
+  padding:16px
+}
+h2{text-align:center}
+label{display:block;margin-top:8px}
+input{
+  width:100%;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #374151;
+  background:#020617;
+  color:#e5e7eb
+}
+.section{
+  margin-top:14px;
+  padding:12px;
+  border:1px solid #1f2937;
+  border-radius:12px
+}
+.sda{
+  margin-top:12px;
+  padding:12px;
+  border:1px dashed #334155;
+  border-radius:10px
+}
+h4{margin:0 0 6px 0}
+span{color:#38bdf8;font-weight:bold}
+hr{border:0;border-top:1px solid #1f2937;margin:8px 0}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>Kalkulator SDA Lengkap</h2>
+
+<label>Jumlah Pengumpulan / march </label>
+<input type="number" id="march" value="64">
+
+<label>Kali Kumpul per Hari</label>
+<input type="number" id="kali" value="3">
+
+<label>Pajak (%)</label>
+<input type="number" id="pajak" value="19">
+
+<div class="section">
+<h3>Hasil per Pengumpulan / Sekali Jalan</h3>
+
+<label>🌽 Jagung</label>
+<input type="number" id="jagung" value="0">
+
+<label>🪵 Kayu</label>
+<input type="number" id="kayu" value="0">
+
+<label>🪨 Batu</label>
+<input type="number" id="batu" value="0">
+
+<label>🪙 Emas</label>
+<input type="number" id="emas" value="0">
+</div>
+
+<div class="section">
+<h3>Hasil Per SDA</h3>
+
+<div class="sda">
+<h4>🌽 Jagung</h4>
+<p>Harian: <span id="jH"></span></p>
+<p>Mingguan: <span id="jM"></span></p>
+<p>Bulanan: <span id="jB"></span></p>
+<hr>
+<p>Harian (Setelah Pajak): <span id="jHN"></span></p>
+<p>Mingguan (Setelah Pajak): <span id="jMN"></span></p>
+<p>Bulanan (Setelah Pajak): <span id="jBN"></span></p>
+</div>
+
+<div class="sda">
+<h4>🪵 Kayu</h4>
+<p>Harian: <span id="kH"></span></p>
+<p>Mingguan: <span id="kM"></span></p>
+<p>Bulanan: <span id="kB"></span></p>
+<hr>
+<p>Harian (Setelah Pajak): <span id="kHN"></span></p>
+<p>Mingguan (Setelah Pajak): <span id="kMN"></span></p>
+<p>Bulanan (Setelah Pajak): <span id="kBN"></span></p>
+</div>
+
+<div class="sda">
+<h4>🪨 Batu</h4>
+<p>Harian: <span id="bH"></span></p>
+<p>Mingguan: <span id="bM"></span></p>
+<p>Bulanan: <span id="bB"></span></p>
+<hr>
+<p>Harian (Setelah Pajak): <span id="bHN"></span></p>
+<p>Mingguan (Setelah Pajak): <span id="bMN"></span></p>
+<p>Bulanan (Setelah Pajak): <span id="bBN"></span></p>
+</div>
+
+<div class="sda">
+<h4>🪙 Emas</h4>
+<p>Harian: <span id="eH"></span></p>
+<p>Mingguan: <span id="eM"></span></p>
+<p>Bulanan: <span id="eB"></span></p>
+<hr>
+<p>Harian (Setelah Pajak): <span id="eHN"></span></p>
+<p>Mingguan (Setelah Pajak): <span id="eMN"></span></p>
+<p>Bulanan (Setelah Pajak): <span id="eBN"></span></p>
+</div>
+
+</div>
+</div>
+
+<script>
+function hitungSDA(per){
+  let march = +marchEl.value;
+  let kali = +kaliEl.value;
+  return march * per * kali;
+}
+function pajak(v){
+  return v - (v * (+pajakEl.value / 100));
+}
+function f(v){ return v.toLocaleString(); }
+
+function hitung(){
+  let j = hitungSDA(+jagungEl.value);
+  let k = hitungSDA(+kayuEl.value);
+  let b = hitungSDA(+batuEl.value);
+  let e = hitungSDA(+emasEl.value);
+
+  set("j",j); set("k",k); set("b",b); set("e",e);
+}
+
+function set(p,v){
+  document.getElementById(p+"H").innerText = f(v);
+  document.getElementById(p+"M").innerText = f(v*7);
+  document.getElementById(p+"B").innerText = f(v*30);
+
+  document.getElementById(p+"HN").innerText = f(pajak(v));
+  document.getElementById(p+"MN").innerText = f(pajak(v*7));
+  document.getElementById(p+"BN").innerText = f(pajak(v*30));
+}
+
+const marchEl = document.getElementById("march");
+const kaliEl = document.getElementById("kali");
+const pajakEl = document.getElementById("pajak");
+const jagungEl = document.getElementById("jagung");
+const kayuEl = document.getElementById("kayu");
+const batuEl = document.getElementById("batu");
+const emasEl = document.getElementById("emas");
+
+document.querySelectorAll("input").forEach(i=>{
+  i.addEventListener("input", hitung)
+});
+hitung();
+</script>
+
+</body>
+  </html>
