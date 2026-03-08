@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TP STORE 4047</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:#0a0a0a;
+  color:#f5e6c4;
+}
+
+.container{
+  max-width:480px;
+  margin:auto;
+  padding:15px;
+}
+
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:25px;
+}
+
+/* LOGO SHINE */
+.logo{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:700;
+}
+
+.logo .tp{
+  font-size:22px;
+  background:linear-gradient(
+    120deg,
+    #b8860b 0%,
+    #f9e27d 20%,
+    #fff8dc 40%,
+    #f9e27d 60%,
+    #b8860b 80%
+  );
+  background-size:200% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shine 4s linear infinite;
+  letter-spacing:1px;
+}
+
+@keyframes shine{
+  to{
+    background-position:200% center;
+  }
+}
+
+.logo .k{
+  font-size:14px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#d4af37,#f9e27d,#b8860b);
+  color:black;
+  font-weight:700;
+  box-shadow:0 0 15px rgba(212,175,55,.9);
+}
+
+.admin-link{
+  background:linear-gradient(135deg,#b8860b,#f9e27d);
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:12px;
+  text-decoration:none;
+  color:black;
+  font-weight:600;
+}
+
+/* CARD */
+.card{
+  background:#111;
+  border:1px solid #3a2f0b;
+  border-radius:20px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:0 0 25px rgba(212,175,55,.2);
+  animation:fadeIn .5s ease;
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* FORM */
+input{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:12px;
+  border:1px solid #3a2f0b;
+  background:#0a0a0a;
+  color:#f5e6c4;
+}
+input:focus{
+  outline:none;
+  border:1px solid #d4af37;
+  box-shadow:0 0 10px rgba(212,175,55,.7);
+}
+
+button{
+  width:100%;
+  padding:13px;
+  margin-top:12px;
+  border-radius:14px;
+  border:none;
+  background:linear-gradient(135deg,#d4af37,#f9e27d,#b8860b);
+  color:black;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover{
+  transform:scale(1.03);
+  box-shadow:0 0 20px rgba(212,175,55,1);
+}
+
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th,td{
+  padding:10px 5px;
+  text-align:center;
+}
+th{
+  color:#d4af37;
+  font-size:18px;
+}
+tbody tr{
+  border-bottom:1px solid #3a2f0b;
+}
+.delete-btn{
+  background:#8b0000;
+  padding:5px 8px;
+  border-radius:8px;
+  font-size:12px;
+  border:none;
+  color:white;
+}
+
+tfoot{
+  color:#f9e27d;
+  font-weight:bold;
+  font-size:15px;
+}
+
+.footer{
+  text-align:center;
+  font-size:11px;
+  opacity:.5;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="header">
+  <div class="logo">
+    <span class="tp">TP STORE</span>
+    <span class="k">4047</span>
+  </div>
+  <a href="admin.html" class="admin-link">ADMIN</a>
+</div>
+
+<div class="card">
+<h3>Input Stok SDA</h3>
+<form id="form">
+<input id="nama" placeholder="Nama / Nick ROK" required>
+<input id="food" type="number" placeholder="🌽 Food (1=1M)">
+<input id="wood" type="number" placeholder="🪵 Wood (1=1M)">
+<input id="stone" type="number" placeholder="🪨 Stone (1=1M)">
+<input id="gold" type="number" placeholder="🪙 Gold (1=1M)">
+<button type="submit">Simpan Stok</button>
+</form>
+<p id="status"></p>
+</div>
+
+<div class="card">
+<h3>Stok Tersedia</h3>
+<table>
+<thead>
+<tr>
+<th>Nama</th>
+<th>🌽</th>
+<th>🪵</th>
+<th>🪨</th>
+<th>🪙</th>
+<th></th>
+</tr>
+</thead>
+<tbody id="data"></tbody>
+<tfoot>
+<tr>
+<td>TOTAL</td>
+<td id="tFood"></td>
+<td id="tWood"></td>
+<td id="tStone"></td>
+<td id="tGold"></td>
+<td>-</td>
+</tr>
+</tfoot>
+</table>
+</div>
+
+<div class="footer">© TP STORE </div>
+</div>
+
+<script>
+const url="https://script.google.com/macros/s/AKfycbwDUKwHORRahmm-h_L25BZXwKaGdMsaI_pTqVAD3ruZn1IYhAphQGOrbdw41ukIX5cMcg/exec";
+
+form.onsubmit=e=>{
+e.preventDefault();
+fetch(url,{
+method:"POST",
+body:JSON.stringify({
+nama:nama.value,
+food:food.value||0,
+wood:wood.value||0,
+stone:stone.value||0,
+gold:gold.value||0
+})
+}).then(()=>{
+status.innerText="Stok berhasil disimpan";
+form.reset();
+loadData();
+});
+};
+
+function hapus(n){
+if(!confirm("Hapus stok "+n+"?")) return;
+fetch(url,{
+method:"POST",
+body:JSON.stringify({action:"delete",nama:n})
+}).then(loadData);
+}
+
+function loadData(){
+fetch(url).then(r=>r.json()).then(d=>{
+let h="";
+d.list.forEach(r=>{
+h+=`<tr>
+<td>${r.nama}</td>
+<td>${r.food}M</td>
+<td>${r.wood}M</td>
+<td>${r.stone}M</td>
+<td>${r.gold}M</td>
+<td><button class="delete-btn" onclick="hapus('${r.nama}')">X</button></td>
+</tr>`;
+});
+data.innerHTML=h;
+
+tFood.innerText=d.total.food+"M";
+tWood.innerText=d.total.wood+"M";
+tStone.innerText=d.total.stone+"M";
+tGold.innerText=d.total.gold+"M";
+});
+}
+loadData();
+</script>
+
+</body>
+  </html>
