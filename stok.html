@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TP STORE - System Final</title>
+<style>
+    body{margin:0; font-family:'Poppins',sans-serif; background:#0a0a0a; color:#f5e6c4;}
+    .header-bar{background:#111; padding:15px; display:flex; align-items:center; border-bottom:1px solid #3a2f0b;}
+    .menu-icon{font-size:24px; cursor:pointer; color:#d4af37; margin-right:15px;}
+    .sidebar{height:100%; width:0; position:fixed; top:0; left:0; background:#111; z-index:100; transition:0.3s; border-right:1px solid #3a2f0b; overflow-y:auto;}
+    .sidebar-header{padding:20px; text-align:center; color:#d4af37; font-weight:bold;}
+    .kd-item{padding:15px; display:flex; justify-content:space-between; border-bottom:1px solid #3a2f0b;}
+    .kd-name{cursor:pointer; flex-grow:1;}
+    .delete-kd{color:red; cursor:pointer; font-size:12px; margin-left:10px;}
+    .btn-add{background:linear-gradient(135deg,#d4af37,#b8860b); color:black; padding:15px; text-align:center; font-weight:bold; cursor:pointer;}
+    .container{padding:15px; max-width:500px; margin:auto;}
+    .card{background:#111; border:1px solid #3a2f0b; border-radius:15px; padding:15px; margin-bottom:15px;}
+    input{width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #3a2f0b; background:#000; color:#f5e6c4; box-sizing:border-box;}
+    button{width:100%; padding:12px; margin-top:10px; border-radius:10px; border:none; background:linear-gradient(135deg,#d4af37,#b8860b); font-weight:700; cursor:pointer;}
+    table{width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;}
+    th,td{border:1px solid #3a2f0b; padding:8px 2px; text-align:center;}
+    th{color:#d4af37;}
+    tfoot{color:#f9e27d; font-weight:bold;}
+    .result{white-space:pre-line; background:#000; border:1px solid #3a2f0b; padding:15px; border-radius:12px; margin-top:15px; font-size:13px; display:none;}
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+    <div class="menu-icon" onclick="toggleSidebar()">&#9776;</div>
+    <h3 style="margin:0;">TP STORE - KD <span id="kdDisplay">-</span></h3>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <div class="sidebar-header">DAFTAR KD</div>
+    <div class="btn-add" onclick="tambahKD()">+ TAMBAH KD BARU</div>
+    <div id="kdList"></div>
+</div>
+
+<div class="container" onclick="closeSidebar()">
+    <div class="card">
+        <form id="form">
+            <input id="nama" placeholder="Nama / Nick" required>
+            <input id="food" type="number" placeholder="🌽 Food (M)">
+            <input id="wood" type="number" placeholder="🪵 Wood (M)">
+            <input id="stone" type="number" placeholder="🪨 Stone (M)">
+            <input id="gold" type="number" placeholder="🪙 Gold (M)">
+            <button type="submit" id="submitBtn">Simpan Stok</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Pembagian Kirim</h3>
+        <input id="bJ" placeholder="Buyer Butuh Jagung (M)">
+        <input id="bK" placeholder="Buyer Butuh Kayu (M)">
+        <input id="bB" placeholder="Buyer Butuh Batu (M)">
+        <input id="bE" placeholder="Buyer Butuh Emas (M)">
+        <hr style="border:0; border-top:1px solid #3a2f0b; margin:15px 0;">
+        <input id="rJ" placeholder="Rate 🌽 (Rp/1M)">
+        <input id="rK" placeholder="Rate 🪵 (Rp/1M)">
+        <input id="rB" placeholder="Rate 🪨 (Rp/1M)">
+        <input id="rE" placeholder="Rate 🪙 (Rp/1M)">
+        
+        <div style="display:flex; gap:5px;">
+            <button onclick="hitung()" style="background:#2563eb; color:white;">Hitung</button>
+            <button onclick="tambahManual()" style="background:#475569; color:white;">+ Member</button>
+        </div>
+
+        <table>
+            <thead><tr><th>Ikut</th><th>Nama</th><th>🌽</th><th>🪵</th><th>🪨</th><th>🪙</th><th>X</th></tr></thead>
+            <tbody id="dataBody"></tbody>
+            <tfoot id="totalRow"></tfoot>
+        </table>
+        
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <button onclick="salinStok()" style="background:#64748b;">Copy Stok Ready</button>
+            <button onclick="salinKirim()" style="background:#059669;">Salin Kirim</button>
+            <button onclick="salinLengkap()" style="background:#d97706;">Salin Lengkap</button>
+        </div>
+    </div>
+    <div id="hasil" class="result"></div>
+</div>
+
+<script>
+const url = "https://script.google.com/macros/s/AKfycbxIR4YD2AgkZid4L5gn008aINJ_7S2VQrE_QGYQyMgPfrXJFMocbEW42gvOHtP8h-UN/exec"; 
+let activeKD = localStorage.getItem('lastKD') || '';
+let kds = JSON.parse(localStorage.getItem('myKDs')) || ['4013'];
+
+function toggleSidebar() { document.getElementById('sidebar').style.width = document.getElementById('sidebar').style.width == "250px" ? "0" : "250px"; }
+function closeSidebar() { document.getElementById('sidebar').style.width = "0"; }
+
+function renderMenu() {
+    let list = document.getElementById('kdList');
+    list.innerHTML = "";
+    kds.forEach((kd, index) => {
+        list.innerHTML += `<div class="kd-item">
+            <span class="kd-name" onclick="pilihKD('${kd}')">KD ${kd}</span>
+            <span class="delete-kd" onclick="hapusKD(${index})">Hapus</span>
+        </div>`;
+    });
+}
+
+function tambahKD() {
+    let pass = prompt("Masukkan Password:");
+    if(pass !== "657") return alert("Password Salah!");
+    let baru = prompt("Masukkan Nomor KD:");
+    if(baru && !kds.includes(baru)) { kds.push(baru); localStorage.setItem('myKDs', JSON.stringify(kds)); renderMenu(); }
+}
+
+function hapusKD(index) {
+    let pass = prompt("Masukkan Password untuk Hapus KD:");
+    if(pass !== "657") return alert("Password Salah!");
+    if(confirm("Hapus KD " + kds[index] + "?")) { 
+        if(activeKD === kds[index]) { activeKD = ""; localStorage.setItem('lastKD', ""); document.getElementById('kdDisplay').innerText = "-"; }
+        kds.splice(index, 1); localStorage.setItem('myKDs', JSON.stringify(kds)); renderMenu(); 
+    }
+}
+
+function pilihKD(kd) {
+    activeKD = kd; localStorage.setItem('lastKD', kd);
+    document.getElementById('kdDisplay').innerText = kd;
+    closeSidebar(); loadData();
+}
+
+function tambahManual() {
+    document.getElementById('dataBody').innerHTML += `<tr>
+        <td><input type="checkbox" class="ikut" checked></td>
+        <td><input class="n" style="width:50px" placeholder="Nama"></td>
+        <td><input class="j" style="width:40px" value="0"></td>
+        <td><input class="k" style="width:40px" value="0"></td>
+        <td><input class="b" style="width:40px" value="0"></td>
+        <td><input class="e" style="width:40px" value="0"></td>
+        <td><button onclick="this.closest('tr').remove()" style="background:red; color:white; border:none;">X</button></td>
+    </tr>`;
+}
+
+form.onsubmit = async (e) => {
+    e.preventDefault();
+    if(!activeKD) return alert("Pilih KD dulu!");
+    const btn = document.getElementById('submitBtn');
+    btn.innerText = "Menyimpan...";
+    await fetch(url, { method: "POST", body: JSON.stringify({ 
+        kd: activeKD, nama: nama.value, food: food.value||0, wood: wood.value||0, stone: stone.value||0, gold: gold.value||0 
+    })});
+    form.reset();
+    await loadData();
+    btn.innerText = "Simpan Stok";
+};
+
+async function loadData() {
+    if(!activeKD) return;
+    const res = await fetch(url + "?kd=" + activeKD);
+    const d = await res.json();
+    let h = ""; let sumJ=0, sumK=0, sumB=0, sumE=0;
+    d.list.forEach(r => {
+        sumJ+= +r.food; sumK+= +r.wood; sumB+= +r.stone; sumE+= +r.gold;
+        h += `<tr><td><input type="checkbox" class="ikut" checked></td>
+              <td><span class="n">${r.nama}</span></td>
+              <td><span class="j">${r.food}</span></td>
+              <td><span class="k">${r.wood}</span></td>
+              <td><span class="b">${r.stone}</span></td>
+              <td><span class="e">${r.gold}</span></td>
+              <td><button onclick="hapus('${r.nama}')" style="background:red; color:white; border:none; padding:2px;">X</button></td></tr>`;
+    });
+    document.getElementById('dataBody').innerHTML = h;
+    document.getElementById('totalRow').innerHTML = `<tr><td>TOTAL</td><td>-</td><td>${sumJ}</td><td>${sumK}</td><td>${sumB}</td><td>${sumE}</td><td>-</td></tr>`;
+}
+
+function salinStok(){
+    const tds = document.querySelectorAll("#totalRow td");
+    if(tds.length < 5) return alert("Belum ada data!");
+    const text = `Ready ${tds[2].innerText}M | ${tds[3].innerText}M | ${tds[4].innerText}M | ${tds[5].innerText}M`;
+    copyText(text);
+}
+
+function hitung(){
+    let need = {j:+bJ.value||0, k:+bK.value||0, b:+bB.value||0, e:+bE.value||0};
+    let rate = {j:+rJ.value||0, k:+rK.value||0, b:+rB.value||0, e:+rE.value||0};
+    let aktif = [];
+    document.querySelectorAll("#dataBody tr").forEach(r => {
+        if(r.querySelector(".ikut").checked){
+            let nama = r.querySelector(".n").innerText || r.querySelector(".n").value;
+            let j = r.querySelector(".j").innerText || r.querySelector(".j").value;
+            let k = r.querySelector(".k").innerText || r.querySelector(".k").value;
+            let b = r.querySelector(".b").innerText || r.querySelector(".b").value;
+            let e = r.querySelector(".e").innerText || r.querySelector(".e").value;
+            aktif.push({ nama: nama, stok: {j:+j, k:+k, b:+b, e:+e}, kirim: {j:0, k:0, b:0, e:0} });
+        }
+    });
+
+    ["j","k","b","e"].forEach(x => {
+        let sisa = need[x];
+        while(sisa > 0){
+            let jalan = false;
+            for(let a of aktif){
+                if(a.stok[x] - a.kirim[x] > 0 && sisa > 0){ a.kirim[x]++; sisa--; jalan=true; }
+            }
+            if(!jalan) break;
+        }
+    });
+
+    let teksKirim = `PEMBAGIAN KIRIM KD ${activeKD}\n\n`;
+    let teksLengkap = `PEMBAGIAN & PENGHASILAN KD ${activeKD}\n\n`;
+    teksLengkap += `Rate:\n🌽${rate.j.toLocaleString()} | 🪵${rate.k.toLocaleString()} | 🪨${rate.b.toLocaleString()} | 🪙${rate.e.toLocaleString()}\n\n`;
+    
+    let totalSemua = 0;
+    aktif.forEach(a => {
+        let bayar = (a.kirim.j*rate.j) + (a.kirim.k*rate.k) + (a.kirim.b*rate.b) + (a.kirim.e*rate.e);
+        totalSemua += bayar;
+        teksKirim += `${a.nama} kirim ${a.kirim.j}/${a.kirim.k}/${a.kirim.b}/${a.kirim.e}\n`;
+        teksLengkap += `${a.nama} kirim ${a.kirim.j}/${a.kirim.k}/${a.kirim.b}/${a.kirim.e} (Rp ${bayar.toLocaleString()})\n`;
+    });
+    teksLengkap += `\nTOTAL PENGHASILAN: Rp ${totalSemua.toLocaleString()}`;
+    
+    document.getElementById('hasil').style.display = "block";
+    document.getElementById('hasil').innerText = teksLengkap;
+    document.getElementById('hasil').dataset.teksKirim = teksKirim;
+    document.getElementById('hasil').dataset.teksLengkap = teksLengkap;
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => alert("Berhasil disalin!")).catch(() => alert("Gagal menyalin, coba lagi."));
+}
+
+function salinKirim(){ 
+    let t = document.getElementById('hasil').dataset.teksKirim;
+    if(!t) return alert("Klik tombol Hitung dulu!");
+    copyText(t); 
+}
+function salinLengkap(){ 
+    let t = document.getElementById('hasil').dataset.teksLengkap;
+    if(!t) return alert("Klik tombol Hitung dulu!");
+    copyText(t); 
+}
+
+function hapus(n) { if(confirm("Hapus "+n+"?")) fetch(url, { method: "POST", body: JSON.stringify({ action: "delete", kd: activeKD, nama: n }) }).then(loadData); }
+
+renderMenu();
+if(activeKD) { document.getElementById('kdDisplay').innerText = activeKD; loadData(); }
+</script>
+</body>
+  </html>
+  
