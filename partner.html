@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TP STORE PRO - Partner Commission</title>
+<style>
+    body{margin:0; font-family:sans-serif; background:#0a0a0a; color:#f5e6c4;}
+    .header-bar{background:#111; padding:15px; display:flex; align-items:center; border-bottom:1px solid #3a2f0b;}
+    .sidebar{height:100%; width:0; position:fixed; top:0; left:0; background:#111; z-index:100; transition:0.3s; border-right:1px solid #3a2f0b; overflow-y:auto;}
+    .kd-item{padding:15px; border-bottom:1px solid #3a2f0b; cursor:pointer;}
+    .container{padding:15px; max-width:500px; margin:auto;}
+    .card{background:#111; border:1px solid #3a2f0b; border-radius:15px; padding:15px; margin-bottom:15px;}
+    input{width:100%; padding:8px; margin-top:2px; border-radius:5px; border:1px solid #3a2f0b; background:#000; color:#f5e6c4;}
+    button{width:100%; padding:10px; margin-top:10px; border-radius:8px; border:none; background:#d4af37; font-weight:700; cursor:pointer;}
+    table{width:100%; border-collapse:collapse; font-size:11px; margin-top:10px;}
+    th,td{border:1px solid #3a2f0b; padding:4px; text-align:center;}
+    .input-tbl{width:35px !important; text-align:center; padding:2px;}
+    .result{white-space:pre-line; background:#000; border:1px solid #d4af37; padding:15px; border-radius:12px; margin-top:15px; font-size:13px; display:none;}
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+    <div onclick="toggleSidebar()" style="cursor:pointer; margin-right:15px; color:#d4af37;">&#9776;</div>
+    <h3 style="margin:0;">TP STORE - KD <span id="kdDisplay">-</span></h3>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <div style="padding:20px; text-align:center; color:#d4af37; font-weight:bold;">DAFTAR KD</div>
+    <div id="kdList"></div>
+</div>
+
+<div class="container" onclick="closeSidebar()">
+    <div class="card">
+        <form id="form">
+            <input id="nama" placeholder="Nama Member" required>
+            <div style="display:flex; gap:5px;"><input id="food" type="number" placeholder="🌽"> <input id="wood" type="number" placeholder="🪵"></div>
+            <div style="display:flex; gap:5px;"><input id="stone" type="number" placeholder="🪨"> <input id="gold" type="number" placeholder="🪙"></div>
+            <button type="submit">Simpan Stok</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+            <input id="bJ" placeholder="Butuh 🌽"><input id="bK" placeholder="Butuh 🪵">
+            <input id="bB" placeholder="Butuh 🪨"><input id="bE" placeholder="Butuh 🪙">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:5px;">
+            <input id="rJ" placeholder="Rate 🌽"><input id="rK" placeholder="Rate 🪵">
+            <input id="rB" placeholder="Rate 🪨"><input id="rE" placeholder="Rate 🪙">
+        </div>
+        
+        <label style="display:block; margin: 10px 0; color:#d4af37; font-size: 14px; cursor:pointer;">
+            <input type="checkbox" id="pajakCheck" onchange="updateTotals()"> Aktifkan Pajak 5% (Komisi Partner)
+        </label>
+
+        <button onclick="hitung()" style="background:#2563eb; color:white;">Hitung</button>
+        <table id="stokTable">
+            <thead><tr><th>V</th><th>Nama</th><th>🌽</th><th>🪵</th><th>🪨</th><th>🪙</th><th>X</th></tr></thead>
+            <tbody id="dataBody"></tbody>
+            <tfoot id="totalRow"></tfoot>
+        </table>
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <button onclick="salinStok()" style="background:#64748b;">Copy Stok</button>
+            <button onclick="salinKirim()" style="background:#059669;">Salin Kirim</button>
+            <button onclick="salinLengkap()" style="background:#d97706;">Salin Lengkap</button>
+        </div>
+    </div>
+    <div id="hasil" class="result"></div>
+</div>
+
+<script>
+const url = "https://script.google.com/macros/s/AKfycbwMBBUGfC8H4m4oXd3Pxqaw0kYyDtbfmXB5npnvxX3_4DQoYaJeZUXQjue1_DOmQ8_7WQ/exec"; 
+let activeKD = localStorage.getItem('lastKD') || '3990';
+window.dataToProcess = null;
+
+['3990', '4090'].forEach(k => document.getElementById('kdList').innerHTML += `<div class="kd-item" onclick="pilihKD('${k}')">KD ${k}</div>`);
+
+function toggleSidebar() { document.getElementById('sidebar').style.width = document.getElementById('sidebar').style.width == "250px" ? "0" : "250px"; }
+function closeSidebar() { document.getElementById('sidebar').style.width = "0"; }
+function pilihKD(k) { activeKD = k; localStorage.setItem('lastKD', k); document.getElementById('kdDisplay').innerText = k; closeSidebar(); loadData(); }
+
+function getTax() { return document.getElementById('pajakCheck').checked ? 0.95 : 1; }
+function isPajakActive() { return document.getElementById('pajakCheck').checked; }
+
+async function loadData() {
+    const res = await fetch(url + "?kd=" + activeKD); const d = await res.json();
+    document.getElementById('dataBody').innerHTML = "";
+    d.list.forEach(r => addRow(r.nama, r.food, r.wood, r.stone, r.gold));
+    updateTotals();
+}
+
+function updateTotals() {
+    let sJ=0, sK=0, sB=0, sE=0;
+    const tax = getTax();
+    document.querySelectorAll("#dataBody tr").forEach(r => {
+        sJ += +r.querySelector(".j").value || 0; 
+        sK += +r.querySelector(".k").value || 0; 
+        sB += +r.querySelector(".b").value || 0; 
+        sE += +r.querySelector(".e").value || 0;
+    });
+    let dJ = (sJ * tax).toFixed(1).replace(/\.0$/, '');
+    let dK = (sK * tax).toFixed(1).replace(/\.0$/, '');
+    let dB = (sB * tax).toFixed(1).replace(/\.0$/, '');
+    let dE = (sE * tax).toFixed(1).replace(/\.0$/, '');
+
+    document.getElementById('totalRow').innerHTML = `<tr><td>-</td><td>TOTAL</td><td>${dJ}</td><td>${dK}</td><td>${dB}</td><td>${dE}</td><td>-</td></tr>`;
+}
+
+function addRow(nama, j, k, b, e) {
+    document.getElementById('dataBody').innerHTML += `<tr><td><input type="checkbox" class="ikut" checked onchange="updateTotals()"></td>
+    <td><input class="n" style="width:50px" value="${nama}"></td>
+    <td><input class="j input-tbl" value="${j}" oninput="updateTotals()"></td><td><input class="k input-tbl" value="${k}" oninput="updateTotals()"></td>
+    <td><input class="b input-tbl" value="${b}" oninput="updateTotals()"></td><td><input class="e input-tbl" value="${e}" oninput="updateTotals()"></td>
+    <td><button onclick="hapus('${nama}')" style="background:red; color:white;">X</button></td></tr>`;
+}
+
+async function hapus(nama) {
+    if(!confirm("Hapus "+nama+"?")) return;
+    await fetch(url, { method: "POST", body: JSON.stringify({ action: "delete", kd: activeKD, nama: nama }) });
+    loadData();
+}
+
+function hitung(){
+    let aktif = [];
+    const tax = getTax();
+    const pajakActive = isPajakActive();
+
+    document.querySelectorAll("#dataBody tr").forEach(r => {
+        if(r.querySelector(".ikut").checked){
+            aktif.push({ 
+                nama: r.querySelector(".n").value, 
+                stok: {
+                    j: (+r.querySelector(".j").value * tax), 
+                    k: (+r.querySelector(".k").value * tax), 
+                    b: (+r.querySelector(".b").value * tax), 
+                    e: (+r.querySelector(".e").value * tax)
+                }, 
+                kirim: {j:0, k:0, b:0, e:0} 
+            });
+        }
+    });
+    let need = {j:+document.getElementById('bJ').value||0, k:+document.getElementById('bK').value||0, b:+document.getElementById('bB').value||0, e:+document.getElementById('bE').value||0};
+    let rate = {j:+document.getElementById('rJ').value||0, k:+document.getElementById('rK').value||0, b:+document.getElementById('rB').value||0, e:+document.getElementById('rE').value||0};
+    
+    ["j","k","b","e"].forEach(x => {
+        let sisa = need[x];
+        while(sisa > 0){
+            let jalan = false;
+            for(let a of aktif){ if(a.stok[x] - a.kirim[x] > 0 && sisa > 0){ a.kirim[x]++; sisa--; jalan=true; } }
+            if(!jalan) break;
+        }
+    });
+
+    let tKirim = `PEMBAGIAN KIRIM KD ${activeKD}\n\n`;
+    let tLengkap = `PEMBAGIAN KD ${activeKD}\nRate: ${rate.j}/${rate.k}/${rate.b}/${rate.e}\n\n`;
+    let totalSemua = 0, sJ=0, sK=0, sB=0, sE=0;
+    let totalKomisi = {j:0, k:0, b:0, e:0};
+
+    aktif.forEach(a => {
+        let bayar = (a.kirim.j*rate.j) + (a.kirim.k*rate.k) + (a.kirim.b*rate.b) + (a.kirim.e*rate.e);
+        totalSemua += bayar;
+        sJ += a.kirim.j; sK += a.kirim.k; sB += a.kirim.b; sE += a.kirim.e;
+        
+        tKirim += `${a.nama}: ${a.kirim.j}/${a.kirim.k}/${a.kirim.b}/${a.kirim.e}\n`;
+        
+        // Format bersih tanpa simbol
+        let baris = `${a.nama} Kirim: ${a.kirim.j}/${a.kirim.k}/${a.kirim.b}/${a.kirim.e} (Rp ${bayar.toLocaleString()})`;
+        
+        if(pajakActive){
+            let cJ = a.kirim.j * 0.05;
+            let cK = a.kirim.k * 0.05;
+            let cB = a.kirim.b * 0.05;
+            let cE = a.kirim.e * 0.05;
+            totalKomisi.j += cJ; totalKomisi.k += cK; totalKomisi.b += cB; totalKomisi.e += cE;
+            baris += `\nKomisi Partner: ${cJ.toFixed(1)}/${cK.toFixed(1)}/${cB.toFixed(1)}/${cE.toFixed(1)}\n`;
+        }
+        tLengkap += baris + `\n`;
+    });
+    
+    tKirim += `\nTOTAL: ${sJ}/${sK}/${sB}/${sE}`;
+    tLengkap += `TOTAL: ${sJ}/${sK}/${sB}/${sE}\nTOTAL PENGHASILAN: Rp ${totalSemua.toLocaleString()}`;
+    
+    if(pajakActive){
+        tLengkap += `\n\n=== TOTAL KOMISI PARTNER ===\n${totalKomisi.j.toFixed(1)}/${totalKomisi.k.toFixed(1)}/${totalKomisi.b.toFixed(1)}/${totalKomisi.e.toFixed(1)}`;
+    }
+    
+    const dataSave = { aktif: aktif, tKirim: tKirim, tLengkap: tLengkap };
+    localStorage.setItem('pendingCalc', JSON.stringify(dataSave));
+    window.dataToProcess = aktif;
+    
+    document.getElementById('hasil').style.display = "block";
+    document.getElementById('hasil').innerHTML = tLengkap + `<br><button onclick="prosesKurangi()" style="background:#dc2626; color:white;">Proses & Kurangi Stok</button>`;
+}
+
+async function prosesKurangi() { 
+    if(!confirm("Proses potongan stok sekarang?")) return;
+    await fetch(url, { method: "POST", body: JSON.stringify({ action: "updateStok", kd: activeKD, list: window.dataToProcess }) });
+    localStorage.removeItem('pendingCalc');
+    alert("Stok Berhasil Dipotong!"); location.reload();
+}
+
+function restorePending() {
+    let saved = localStorage.getItem('pendingCalc');
+    if (saved) {
+        let d = JSON.parse(saved);
+        window.dataToProcess = d.aktif;
+        document.getElementById('hasil').style.display = "block";
+        document.getElementById('hasil').innerHTML = d.tLengkap + `<br><button onclick="prosesKurangi()" style="background:#dc2626; color:white;">Proses & Kurangi Stok</button>`;
+    }
+}
+
+function salinStok(){ 
+    const tax = getTax();
+    let row = document.getElementById('totalRow').querySelector('tr');
+    let cells = row.cells;
+    let sJ = (+cells[2].innerText * tax).toFixed(1).replace(/\.0$/, '');
+    let sK = (+cells[3].innerText * tax).toFixed(1).replace(/\.0$/, '');
+    let sB = (+cells[4].innerText * tax).toFixed(1).replace(/\.0$/, '');
+    let sE = (+cells[5].innerText * tax).toFixed(1).replace(/\.0$/, '');
+    
+    navigator.clipboard.writeText(`Ready ${sJ}M | ${sK}M | ${sB}M | ${sE}M`); 
+    alert("Data Stok Ready Disalin (Termasuk Pajak)!"); 
+}
+function salinKirim(){ 
+    let d = JSON.parse(localStorage.getItem('pendingCalc'));
+    if(d) { navigator.clipboard.writeText(d.tKirim); alert("Data Kirim Disalin!"); } 
+}
+function salinLengkap(){ 
+    let d = JSON.parse(localStorage.getItem('pendingCalc'));
+    if(d) { navigator.clipboard.writeText(d.tLengkap); alert("Data Lengkap Disalin!"); } 
+}
+
+document.getElementById('form').onsubmit = async (e) => { 
+    e.preventDefault(); 
+    await fetch(url, { method: "POST", body: JSON.stringify({ kd: activeKD, nama: document.getElementById('nama').value, food: document.getElementById('food').value||0, wood: document.getElementById('wood').value||0, stone: document.getElementById('stone').value||0, gold: document.getElementById('gold').value||0 }) }); 
+    loadData(); 
+};
+
+document.getElementById('kdDisplay').innerText = activeKD;
+loadData().then(restorePending);
+</script>
+</body>
+  </html>
+
